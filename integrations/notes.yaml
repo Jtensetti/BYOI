@@ -1,0 +1,8 @@
+# kind: module – egen TypeScript-kod. Nödutgången för allt som inte är REST/MCP.
+id: notes
+name: Anteckningar
+description: Enkel anteckningsbok lagrad lokalt (fungerar offline)
+kind: module
+module: ./src/notes.ts
+config:
+  file: ../.notes.json

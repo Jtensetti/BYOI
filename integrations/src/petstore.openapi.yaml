@@ -1,0 +1,37 @@
+openapi: 3.0.3
+info: { title: Petstore (utdrag), version: "1.0" }
+servers: [{ url: https://petstore3.swagger.io/api/v3 }]
+paths:
+  /pet/findByStatus:
+    get:
+      operationId: findPetsByStatus
+      summary: Hitta husdjur efter status
+      parameters:
+        - name: status
+          in: query
+          required: true
+          schema: { type: string, enum: [available, pending, sold] }
+  /pet/{petId}:
+    get:
+      operationId: getPetById
+      summary: Hämta ett husdjur
+      parameters:
+        - { name: petId, in: path, required: true, schema: { type: integer } }
+  /pet:
+    post:
+      operationId: addPet
+      summary: Lägg till ett husdjur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Pet" }
+components:
+  schemas:
+    Pet:
+      type: object
+      required: [name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        status: { type: string, enum: [available, pending, sold] }

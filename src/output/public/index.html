@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BYOI</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #e4e4df;
+    --accent: #2f5bd3; --ok: #1f8a4c; --warn: #b7791f; --err: #c0392b; --code: #f1f1ed;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #141413; --panel: #1d1d1b; --ink: #ecece8; --muted: #9a9a93; --line: #2e2e2b;
+      --accent: #7c9cff; --ok: #4cc27f; --warn: #e0a84a; --err: #ef6b5b; --code: #262624; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, sans-serif; height: 100vh; display: grid; grid-template-columns: 320px 1fr; }
+  aside { border-right: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 16px; }
+  h1 { font-size: 18px; margin: 0 0 2px; } h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 20px 0 8px; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+  .row { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+  .pill { font-size: 11px; padding: 1px 8px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
+  .ready { color: var(--ok); } .needs_auth { color: var(--warn); } .error { color: var(--err); } .disabled { color: var(--muted); }
+  .small { font-size: 12px; color: var(--muted); }
+  details summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+  main { display: flex; flex-direction: column; min-width: 0; height: 100vh; }
+  #log { flex: 1; overflow: auto; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 760px; width: 100%; margin: 0 auto; }
+  .user .bubble { background: var(--accent); color: #fff; margin-left: auto; width: fit-content; max-width: 80%; padding: 8px 12px; border-radius: 12px; white-space: pre-wrap; }
+  .assistant .text { white-space: pre-wrap; }
+  .thinking { color: var(--muted); font-size: 13px; border-left: 2px solid var(--line); padding-left: 8px; white-space: pre-wrap; max-height: 120px; overflow: auto; }
+  .tool { font-size: 13px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; margin: 6px 0; background: var(--panel); }
+  .tool pre, textarea, code { background: var(--code); border-radius: 6px; font: 12px/1.4 ui-monospace, monospace; }
+  .tool pre { padding: 6px; margin: 4px 0 0; overflow: auto; max-height: 160px; white-space: pre-wrap; }
+  .notice { color: var(--warn); font-size: 13px; }
+  form#chat { display: flex; gap: 8px; padding: 16px; border-top: 1px solid var(--line); background: var(--panel); }
+  #input { flex: 1; resize: none; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; }
+  button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 13px; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  input[type=text], input[type=password] { width: 100%; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+  textarea.manifest { width: 100%; height: 160px; padding: 8px; border: 1px solid var(--line); color: var(--ink); }
+  @media (max-width: 760px) { body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } aside { max-height: 40vh; border-right: 0; border-bottom: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<aside>
+  <h1>BYOI</h1>
+  <div class="sub">Bring your own integration → MCP · LLM · Skills · Auth → chatt</div>
+
+  <h2>Integrationer</h2>
+  <div id="integrations" class="small">Laddar…</div>
+  <button id="reload">Ladda om</button>
+
+  <h2>Lägg till integration</h2>
+  <textarea class="manifest" id="manifest" placeholder="Klistra in ett YAML-manifest (kind: http, openapi eller mcp/http)"></textarea>
+  <button class="primary" id="add">Koppla in</button>
+  <div id="addResult" class="small"></div>
+
+  <h2>Skills</h2>
+  <div id="skills" class="small"></div>
+
+  <h2>MCP-gateway</h2>
+  <div class="small">Alla integrationer finns också som en MCP-server på <code id="mcpUrl"></code></div>
+</aside>
+
+<main>
+  <div id="log"></div>
+  <form id="chat">
+    <textarea id="input" rows="2" placeholder="Fråga något – t.ex. ”Hur blir vädret i Göteborg i helgen?”"></textarea>
+    <button class="primary" type="submit">Skicka</button>
+  </form>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let token = ""; try { token = localStorage.getItem("byoi_token") || ""; } catch {}
+let conversationId = null;
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { ...opts, headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}), ...(opts.headers || {}) } });
+  if (res.status === 401) {
+    token = prompt("API-token (BYOI_API_TOKEN):") || "";
+    try { localStorage.setItem("byoi_token", token); } catch {}
+    return api(path, opts);
+  }
+  return res;
+}
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+async function loadSidebar() {
+  const list = await (await api("/api/integrations")).json();
+  $("#integrations").innerHTML = list.map((i) => `
+    <div class="card">
+      <div class="row"><strong>${esc(i.name)}</strong><span class="pill ${i.status}">${i.status}</span></div>
+      <div class="small">${esc(i.id)} · ${esc(i.kind)}${i.message ? " · " + esc(i.message) : ""}</div>
+      ${i.missingSecrets.map((s) => `
+        <form class="secret" data-name="${esc(s)}" style="margin-top:6px">
+          <input type="password" placeholder="${esc(s)}" required> <button style="margin-top:4px">Spara</button>
+        </form>`).join("")}
+      ${i.tools.length ? `<details><summary>${i.tools.length} verktyg</summary>${i.tools.map((t) => `<div class="small">• ${esc(t.name)}${t.confirm ? " 🔒" : ""}</div>`).join("")}</details>` : ""}
+    </div>`).join("") || "Inga integrationer.";
+  document.querySelectorAll("form.secret").forEach((f) => f.onsubmit = async (e) => {
+    e.preventDefault();
+    await api("/api/secrets", { method: "POST", body: JSON.stringify({ name: f.dataset.name, value: f.querySelector("input").value }) });
+    loadSidebar();
+  });
+  const skills = await (await api("/api/skills")).json();
+  $("#skills").innerHTML = skills.map((s) => `<div>• <strong>${esc(s.name)}</strong> – ${esc(s.description)}</div>`).join("") || "Inga.";
+}
+
+$("#mcpUrl").textContent = location.origin + "/mcp";
+$("#reload").onclick = async () => { await api("/api/integrations/reload", { method: "POST" }); loadSidebar(); };
+$("#add").onclick = async () => {
+  const res = await api("/api/integrations", { method: "POST", body: JSON.stringify({ manifest: $("#manifest").value }) });
+  const data = await res.json();
+  $("#addResult").textContent = res.ok ? `Inkopplad: ${data.id} (${data.status})` : `Fel: ${data.error}`;
+  if (res.ok) { $("#manifest").value = ""; loadSidebar(); }
+};
+
+function addMessage(role) {
+  const el = document.createElement("div");
+  el.className = "msg " + role;
+  $("#log").appendChild(el);
+  return el;
+}
+const scroll = () => { $("#log").scrollTop = $("#log").scrollHeight; };
+
+async function send(text) {
+  addMessage("user").innerHTML = `<div class="bubble">${esc(text)}</div>`;
+  const box = addMessage("assistant");
+  let textEl = null, thinkEl = null;
+  const tools = {};
+
+  const res = await api("/api/chat", { method: "POST", body: JSON.stringify({ conversationId, message: text }) });
+  if (!res.ok) { box.innerHTML = `<div class="notice">${esc((await res.json()).error)}</div>`; return; }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let idx;
+    while ((idx = buf.indexOf("\n\n")) >= 0) {
+      const line = buf.slice(0, idx); buf = buf.slice(idx + 2);
+      if (!line.startsWith("data: ")) continue;
+      const ev = JSON.parse(line.slice(6));
+      handle(ev);
+    }
+  }
+
+  function handle(ev) {
+    switch (ev.type) {
+      case "conversation": conversationId = ev.id; break;
+      case "thinking":
+        if (!thinkEl) { thinkEl = document.createElement("div"); thinkEl.className = "thinking"; box.appendChild(thinkEl); }
+        thinkEl.textContent += ev.delta; break;
+      case "text":
+        if (!textEl) { textEl = document.createElement("div"); textEl.className = "text"; box.appendChild(textEl); }
+        textEl.textContent += ev.delta; break;
+      case "tool_call": {
+        textEl = null; thinkEl = null;
+        const el = document.createElement("div"); el.className = "tool";
+        el.innerHTML = `🔧 <strong>${esc(ev.name)}</strong> <span class="small">kör…</span><pre>${esc(JSON.stringify(ev.input, null, 1))}</pre>`;
+        box.appendChild(el); tools[ev.id] = el; break;
+      }
+      case "approval_required": {
+        const el = tools[ev.id];
+        el.querySelector(".small").textContent = "väntar på godkännande";
+        const bar = document.createElement("div"); bar.style.marginTop = "6px";
+        bar.innerHTML = `<button class="primary">Godkänn</button> <button>Neka</button>`;
+        const [yes, no] = bar.querySelectorAll("button");
+        const answer = async (approved) => { bar.remove(); await api("/api/approve", { method: "POST", body: JSON.stringify({ id: ev.id, approved }) }); };
+        yes.onclick = () => answer(true); no.onclick = () => answer(false);
+        el.appendChild(bar); break;
+      }
+      case "tool_result": {
+        const el = tools[ev.id];
+        el.querySelector(".small").innerHTML = ev.isError ? `<span class="error">fel</span>` : `<span class="ready">klart</span>`;
+        const d = document.createElement("details");
+        d.innerHTML = `<summary>resultat</summary><pre>${esc(ev.preview)}</pre>`;
+        el.appendChild(d); break;
+      }
+      case "notice": case "error": {
+        const el = document.createElement("div"); el.className = "notice"; el.textContent = ev.message; box.appendChild(el); break;
+      }
+    }
+    scroll();
+  }
+}
+
+$("#chat").onsubmit = (e) => {
+  e.preventDefault();
+  const text = $("#input").value.trim();
+  if (!text) return;
+  $("#input").value = "";
+  send(text).then(loadSidebar);
+};
+$("#input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#chat").requestSubmit(); } });
+loadSidebar();
+</script>
+</body>
+</html>

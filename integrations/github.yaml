@@ -1,0 +1,33 @@
+# kind: http med bearer-auth. Hemligheten GITHUB_TOKEN läses från miljön eller .secrets.json.
+id: github
+name: GitHub
+description: Repon, issues och pull requests
+kind: http
+baseUrl: https://api.github.com
+headers:
+  X-GitHub-Api-Version: "2022-11-28"
+  User-Agent: byoi
+auth: { type: bearer, secret: GITHUB_TOKEN }
+operations:
+  - name: list_my_repos
+    description: Listar repon för den inloggade användaren.
+    path: /user/repos
+    params:
+      - { name: sort, type: string, enum: [created, updated, pushed, full_name] }
+      - { name: per_page, type: integer }
+  - name: list_issues
+    description: Listar issues i ett repo.
+    path: /repos/{owner}/{repo}/issues
+    params:
+      - { name: owner, in: path }
+      - { name: repo, in: path }
+      - { name: state, type: string, enum: [open, closed, all] }
+  - name: create_issue
+    description: Skapar en issue i ett repo.
+    method: POST
+    path: /repos/{owner}/{repo}/issues
+    params:
+      - { name: owner, in: path }
+      - { name: repo, in: path }
+      - { name: title, in: body, required: true }
+      - { name: body, in: body }

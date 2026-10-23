@@ -1,0 +1,22 @@
+# kind: http – deklarativt REST-API. Ingen auth behövs.
+id: weather
+name: Väder (Open-Meteo)
+description: Väderprognoser för valfri plats
+kind: http
+baseUrl: https://api.open-meteo.com/v1
+operations:
+  - name: forecast
+    description: Hämtar väderprognos (timvis/daglig) för en koordinat.
+    method: GET
+    path: /forecast
+    params:
+      - { name: latitude, type: number, required: true, description: Latitud }
+      - { name: longitude, type: number, required: true, description: Longitud }
+      - name: daily
+        type: string
+        description: Kommaseparerade dagliga variabler, t.ex. temperature_2m_max,temperature_2m_min,precipitation_sum
+      - name: hourly
+        type: string
+        description: Kommaseparerade timvariabler, t.ex. temperature_2m,precipitation
+      - { name: timezone, type: string, default: auto }
+      - { name: forecast_days, type: integer, description: "1-16" }

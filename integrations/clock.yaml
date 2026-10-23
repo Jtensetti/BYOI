@@ -1,0 +1,9 @@
+# kind: mcp – vilken MCP-server som helst. Här en liten lokal server via stdio.
+id: clock
+name: Klocka (MCP-demo)
+description: Aktuell tid i valfri tidszon, via en lokal MCP-server
+kind: mcp
+transport:
+  type: stdio
+  command: npx
+  args: [tsx, ./src/clock-mcp-server.ts]

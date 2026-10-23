@@ -1,0 +1,7 @@
+# kind: openapi – peka på en spec, varje operation blir ett verktyg.
+id: petstore
+name: Petstore (OpenAPI-demo)
+description: Exempel på en integration genererad från en OpenAPI-spec
+kind: openapi
+spec: ./src/petstore.openapi.yaml
+baseUrl: https://petstore3.swagger.io/api/v3
