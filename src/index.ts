@@ -9,7 +9,8 @@ server.listen(port, () => {
   console.log(`BYOI kör på http://localhost:${port}  (MCP-gateway: /mcp)`);
   for (const i of app.registry.integrations) {
     const tools = app.registry.list().filter((t) => t.integrationId === i.id).length;
-    console.log(`  ${i.status.padEnd(10)} ${i.id} (${i.kind})${i.status === "ready" ? ` – ${tools} verktyg` : i.message ? ` – ${i.message}` : ""}`);
+    const msg = i.adapter?.statusMessage?.() ?? i.message;
+    console.log(`  ${i.status.padEnd(10)} ${i.id} (${i.kind}) – ${tools} verktyg${msg ? ` · ${msg}` : ""}`);
   }
   if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) {
     console.log("  OBS: ANTHROPIC_API_KEY saknas – chatten fungerar inte förrän den är satt (MCP-gatewayen fungerar ändå).");
@@ -19,7 +20,7 @@ server.listen(port, () => {
 
 const shutdown = async () => {
   server.close();
-  await app.registry.closeAll();
+  await app.close();
   process.exit(0);
 };
 process.on("SIGINT", shutdown);

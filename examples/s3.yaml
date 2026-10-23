@@ -1,0 +1,9 @@
+id: s3
+name: S3-bucket
+kind: http
+baseUrl: https://min-bucket.s3.eu-north-1.amazonaws.com
+auth: { type: aws_sigv4, service: s3, region: eu-north-1, accessKeyId: AWS_ACCESS_KEY_ID, secretAccessKey: AWS_SECRET_ACCESS_KEY }
+headers: { x-amz-content-sha256: UNSIGNED-PAYLOAD }
+operations:
+  - { name: list, description: Listar objekt, path: /, params: [{ name: list-type, default: "2" }, { name: prefix }] }
+  - { name: get, description: Hämtar ett objekt, path: "/{key}", params: [{ name: key, in: path }] }

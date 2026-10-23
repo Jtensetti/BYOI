@@ -1,0 +1,7 @@
+id: ghql
+name: GitHub (GraphQL)
+kind: graphql
+endpoint: https://api.github.com/graphql
+headers: { User-Agent: byoi }
+auth: { type: bearer, secret: GITHUB_TOKEN }
+allowMutations: false

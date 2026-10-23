@@ -1,0 +1,11 @@
+id: portal
+name: Leverantörsportalen
+kind: browser
+startUrl: https://portal.leverantor.example/
+allowedDomains: [portal.leverantor.example]
+login:
+  url: https://portal.leverantor.example/login
+  steps:
+    - { fill: "#username", value: "${secret:PORTAL_USER}" }
+    - { fill: "#password", value: "${secret:PORTAL_PASSWORD}" }
+    - { click: "button[type=submit]", waitFor: "nav" }

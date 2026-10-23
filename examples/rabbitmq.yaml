@@ -1,0 +1,9 @@
+id: ordrar
+name: Orderkö
+kind: queue
+driver: amqp          # npm install amqplib
+url: amqps://byoi:${secret:RABBIT_PASSWORD}@rabbit.example.com
+subscribe: [orders.created]
+publish: [orders.notes]
+trigger:
+  prompt: En ny order skapades. Kontrollera att kunden finns i CRM och sammanfatta avvikelser.

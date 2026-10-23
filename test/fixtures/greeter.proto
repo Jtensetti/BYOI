@@ -1,0 +1,16 @@
+syntax = "proto3";
+package demo;
+
+service Greeter {
+  rpc SayHello (HelloRequest) returns (HelloReply);
+  rpc ListGreetings (HelloRequest) returns (stream HelloReply);
+  rpc CreateGreeting (HelloRequest) returns (HelloReply);
+}
+
+message HelloRequest {
+  string name = 1;
+  int32 times = 2;
+  Mood mood = 3;
+}
+enum Mood { NEUTRAL = 0; HAPPY = 1; }
+message HelloReply { string message = 1; }

@@ -1,0 +1,7 @@
+id: ekonomi
+name: Ekonomidatabasen
+kind: sql
+driver: postgres
+connection: postgres://byoi_reader:${secret:EKONOMI_DB_PASSWORD}@db.example.com:5432/ekonomi?sslmode=require
+allowWrite: false
+schemas: [public, rapport]

@@ -1,0 +1,6 @@
+id: inventory
+name: Lagertjänst
+kind: grpc
+address: inventory.internal:443
+protoFiles: [./protos/inventory.proto]
+metadata: { authorization: "Bearer ${secret:INVENTORY_TOKEN}" }

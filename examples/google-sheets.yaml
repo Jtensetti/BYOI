@@ -1,0 +1,15 @@
+id: sheets
+name: Google Sheets
+kind: http
+baseUrl: https://sheets.googleapis.com/v4
+auth:
+  type: oauth2_jwt_bearer
+  tokenUrl: https://oauth2.googleapis.com/token
+  issuer: bot@mitt-projekt.iam.gserviceaccount.com
+  privateKey: GOOGLE_SA_PRIVATE_KEY   # PEM från servicekontots JSON-nyckel
+  scope: https://www.googleapis.com/auth/spreadsheets.readonly
+operations:
+  - name: read_range
+    description: Läser ett cellområde, t.ex. Blad1!A1:D50
+    path: /spreadsheets/{spreadsheetId}/values/{range}
+    params: [{ name: spreadsheetId, in: path }, { name: range, in: path }]

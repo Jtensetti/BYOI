@@ -1,0 +1,10 @@
+id: rapporter
+name: Rapportverktyg
+kind: cli
+cwd: /opt/rapporter
+commands:
+  - name: run_report
+    description: Kör en namngiven rapport och returnerar CSV
+    command: ./rapport
+    args: ["--name", "{name}", "--format", "csv", "--from", "{from}"]
+    params: [{ name: name, required: true, enum: [forsaljning, lager, kundfordringar] }, { name: from, description: YYYY-MM-DD }]

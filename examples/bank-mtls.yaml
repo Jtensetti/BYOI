@@ -1,0 +1,6 @@
+id: bank
+name: Bankens företags-API
+kind: openapi
+spec: ./bank-openapi.yaml
+auth: { type: oauth2_client_credentials, tokenUrl: https://api.bank.example/oauth/token, clientId: FYLL_I, clientSecret: BANK_CLIENT_SECRET }
+tls: { cert: BANK_CLIENT_CERT, key: BANK_CLIENT_KEY, ca: BANK_CA }   # PEM i hemligheter

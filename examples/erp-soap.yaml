@@ -1,0 +1,6 @@
+id: erp
+name: Affärssystem (SOAP)
+kind: soap
+wsdl: https://erp.example.com/ws/OrderService?wsdl
+wsSecurity: { username: byoi-integration, secret: ERP_PASSWORD }
+readOnly: [GetOrder, ListOrders, GetCustomer]   # allt annat kräver godkännande

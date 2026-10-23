@@ -1,0 +1,27 @@
+id: microsoft
+name: Microsoft 365
+description: E-post, kalender och filer via Microsoft Graph
+kind: http
+baseUrl: https://graph.microsoft.com/v1.0
+auth:
+  type: oauth2_authorization_code
+  authorizeUrl: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
+  tokenUrl: https://login.microsoftonline.com/common/oauth2/v2.0/token
+  clientId: FYLL_I_APP_ID          # Azure-appregistrering, redirect: <BYOI>/oauth/callback
+  clientSecret: MICROSOFT_CLIENT_SECRET
+  scopes: [offline_access, User.Read, Mail.Read, Calendars.ReadWrite]
+operations:
+  - { name: me, description: Inloggad användare, path: /me }
+  - name: messages
+    description: Senaste e-postmeddelandena
+    path: /me/messages
+    params: [{ name: $top, type: integer }, { name: $search, description: Sökord inom citattecken }]
+  - name: events
+    description: Kalenderhändelser i ett intervall
+    path: /me/calendarView
+    params: [{ name: startDateTime, required: true }, { name: endDateTime, required: true }]
+  - name: create_event
+    description: Skapar en kalenderhändelse
+    method: POST
+    path: /me/events
+    params: [{ name: subject, in: body, required: true }, { name: start, in: body, type: object }, { name: end, in: body, type: object }]

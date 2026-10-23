@@ -1,0 +1,7 @@
+id: events
+name: Händelseström
+kind: queue
+driver: kafka         # npm install kafkajs
+url: broker1.example.com:9092,broker2.example.com:9092
+subscribe: [payments]
+options: { ssl: true, sasl: { mechanism: plain, username: byoi, password: "${secret:KAFKA_PASSWORD}" } }

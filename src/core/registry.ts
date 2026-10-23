@@ -20,6 +20,7 @@ export interface BuiltinTool {
   name: string;
   description: string;
   inputSchema: JsonSchema;
+  confirm?: boolean;
   run(input: Record<string, unknown>): Promise<ToolOutput>;
 }
 
@@ -55,7 +56,7 @@ export class Registry {
         ...b,
         integrationId: "byoi",
         localName: b.name,
-        confirm: false,
+        confirm: Boolean(b.confirm),
         validate: compile(b.inputSchema),
       });
     }
@@ -87,6 +88,11 @@ export class Registry {
         await prev.adapter.close().catch(() => {});
       }
     }
+  }
+
+  /** Re-reads tool lists from already connected adapters (no reconnect). */
+  async rebuild(): Promise<void> {
+    await this.setIntegrations(this.integrations);
   }
 
   /** Sorted, so the tool list is byte-stable (keeps the prompt cache warm). */

@@ -1,0 +1,10 @@
+id: linear
+name: Linear
+kind: mcp
+transport: { type: http, url: https://mcp.linear.app/mcp }
+auth:
+  type: oauth2_authorization_code
+  authorizeUrl: https://linear.app/oauth/authorize
+  tokenUrl: https://api.linear.app/oauth/token
+  clientId: FYLL_I
+  scopes: [read]

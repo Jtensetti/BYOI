@@ -1,0 +1,8 @@
+id: kund-dc
+name: Kundens datacenter
+kind: connector
+connectorId: acme-dc1
+token: ACME_CONNECTOR_TOKEN
+# Hos kunden: lägg vilka manifest som helst (sql, soap, cli, …) i en mapp och kör
+#   BYOI_HUB_URL=wss://<BYOI>/connect BYOI_CONNECTOR_ID=acme-dc1 \
+#   BYOI_CONNECTOR_TOKEN=<samma värde> BYOI_INTEGRATIONS_DIR=./integrations npm run connector

@@ -39,7 +39,9 @@
   button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 13px; }
   button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
   input[type=text], input[type=password] { width: 100%; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
-  textarea.manifest { width: 100%; height: 160px; padding: 8px; border: 1px solid var(--line); color: var(--ink); }
+  textarea.manifest, textarea.source { width: 100%; height: 160px; padding: 8px; border: 1px solid var(--line); color: var(--ink); background: var(--code); }
+  textarea.source { height: 64px; font: inherit; font-size: 13px; }
+  .actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; } .actions button { font-size: 12px; padding: 3px 8px; }
   @media (max-width: 760px) { body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } aside { max-height: 40vh; border-right: 0; border-bottom: 1px solid var(--line); } }
 </style>
 </head>
@@ -52,8 +54,11 @@
   <div id="integrations" class="small">Laddar…</div>
   <button id="reload">Ladda om</button>
 
-  <h2>Lägg till integration</h2>
-  <textarea class="manifest" id="manifest" placeholder="Klistra in ett YAML-manifest (kind: http, openapi eller mcp/http)"></textarea>
+  <h2>Koppla in vad som helst</h2>
+  <textarea class="source" id="source" rows="3" placeholder="URL till API/dokumentation/OpenAPI/GraphQL/MCP/WSDL, en anslutningssträng (postgres://…, mqtt://…) eller en beskrivning/curl-exempel"></textarea>
+  <button id="generate">Analysera</button> <span id="genStatus" class="small"></span>
+  <div id="genInfo" class="small"></div>
+  <textarea class="manifest" id="manifest" placeholder="Manifest (YAML) – fylls i av Analysera, eller skriv/klistra in själv"></textarea>
   <button class="primary" id="add">Koppla in</button>
   <div id="addResult" class="small"></div>
 
@@ -67,7 +72,7 @@
 <main>
   <div id="log"></div>
   <form id="chat">
-    <textarea id="input" rows="2" placeholder="Fråga något – t.ex. ”Hur blir vädret i Göteborg i helgen?”"></textarea>
+    <textarea id="input" rows="2" placeholder="Fråga något – eller ”koppla in https://…” så tar assistenten fram integrationen åt dig"></textarea>
     <button class="primary" type="submit">Skicka</button>
   </form>
 </main>
@@ -98,6 +103,11 @@ async function loadSidebar() {
         <form class="secret" data-name="${esc(s)}" style="margin-top:6px">
           <input type="password" placeholder="${esc(s)}" required> <button style="margin-top:4px">Spara</button>
         </form>`).join("")}
+      <div class="actions">
+        ${i.needsLogin ? `<button class="primary" data-login="${esc(i.id)}">Logga in</button>` : ""}
+        ${i.canLogout ? `<button data-logout="${esc(i.id)}">Logga ut</button>` : ""}
+        <button data-remove="${esc(i.id)}">Ta bort</button>
+      </div>
       ${i.tools.length ? `<details><summary>${i.tools.length} verktyg</summary>${i.tools.map((t) => `<div class="small">• ${esc(t.name)}${t.confirm ? " 🔒" : ""}</div>`).join("")}</details>` : ""}
     </div>`).join("") || "Inga integrationer.";
   document.querySelectorAll("form.secret").forEach((f) => f.onsubmit = async (e) => {
@@ -105,12 +115,35 @@ async function loadSidebar() {
     await api("/api/secrets", { method: "POST", body: JSON.stringify({ name: f.dataset.name, value: f.querySelector("input").value }) });
     loadSidebar();
   });
+  document.querySelectorAll("[data-login]").forEach((b) => b.onclick = async () => {
+    const r = await (await api(`/api/oauth/start/${b.dataset.login}`, { method: "POST" })).json();
+    if (r.url) location.href = r.url; else alert(r.error);
+  });
+  document.querySelectorAll("[data-logout]").forEach((b) => b.onclick = async () => { await api(`/api/oauth/logout/${b.dataset.logout}`, { method: "POST" }); loadSidebar(); });
+  document.querySelectorAll("[data-remove]").forEach((b) => b.onclick = async () => {
+    if (!confirm(`Ta bort integrationen ${b.dataset.remove}?`)) return;
+    await api(`/api/integrations/${b.dataset.remove}`, { method: "DELETE" }); loadSidebar();
+  });
   const skills = await (await api("/api/skills")).json();
   $("#skills").innerHTML = skills.map((s) => `<div>• <strong>${esc(s.name)}</strong> – ${esc(s.description)}</div>`).join("") || "Inga.";
 }
 
 $("#mcpUrl").textContent = location.origin + "/mcp";
 $("#reload").onclick = async () => { await api("/api/integrations/reload", { method: "POST" }); loadSidebar(); };
+$("#generate").onclick = async () => {
+  const source = $("#source").value.trim();
+  if (!source) return;
+  $("#genStatus").textContent = "analyserar…"; $("#genInfo").innerHTML = "";
+  const res = await api("/api/integrations/generate", { method: "POST", body: JSON.stringify({ source }) });
+  const d = await res.json();
+  $("#genStatus").textContent = "";
+  if (!res.ok) { $("#genInfo").innerHTML = `<span class="error">${esc(d.error)}</span>`; return; }
+  $("#manifest").value = d.manifest;
+  $("#genInfo").innerHTML = `<div>Identifierat: <strong>${esc(d.detected)}</strong></div>` +
+    (d.secrets.length ? `<div>Hemligheter: ${d.secrets.map((x) => esc(x.name)).join(", ")}</div>` : "") +
+    d.notes.map((n) => `<div>• ${esc(n)}</div>`).join("") + `<div>Granska manifestet och tryck Koppla in.</div>`;
+};
+if (new URLSearchParams(location.search).get("connected")) history.replaceState(null, "", "/");
 $("#add").onclick = async () => {
   const res = await api("/api/integrations", { method: "POST", body: JSON.stringify({ manifest: $("#manifest").value }) });
   const data = await res.json();

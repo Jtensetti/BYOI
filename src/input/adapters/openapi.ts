@@ -2,7 +2,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import YAML from "yaml";
-import type { Manifest } from "../manifest.ts";
+import type { ManifestOf } from "../manifest.ts";
 import { executeRequest, type ParamLocation, type RequestSpec } from "./http.ts";
 import type { Adapter, AdapterContext, JsonSchema, ToolDef, ToolOutput } from "./types.ts";
 
@@ -42,13 +42,16 @@ export class OpenApiAdapter implements Adapter {
   private requests = new Map<string, RequestSpec>();
 
   constructor(
-    private manifest: Extract<Manifest, { kind: "openapi" }>,
+    private manifest: ManifestOf<"openapi">,
     private ctx: AdapterContext,
   ) {}
 
   async connect(): Promise<void> {
     const spec = await loadSpec(this.manifest.spec, this.ctx.baseDir);
-    const baseUrl = this.manifest.baseUrl ?? spec.servers?.[0]?.url;
+    const swagger2 = spec.swagger && spec.host ? `${(spec.schemes ?? ["https"])[0]}://${spec.host}${spec.basePath ?? ""}` : undefined;
+    let baseUrl: string | undefined = this.manifest.baseUrl ?? spec.servers?.[0]?.url ?? swagger2;
+    // Relative server URLs ("/api/v3") are relative to where the spec came from.
+    if (baseUrl && !/^https?:/.test(baseUrl) && /^https?:/.test(this.manifest.spec)) baseUrl = new URL(baseUrl, this.manifest.spec).toString();
     if (!baseUrl) throw new Error("Ingen baseUrl: ange den i manifestet eller i specens servers[]");
 
     for (const [route, item] of Object.entries<Spec>(spec.paths ?? {})) {
@@ -64,8 +67,13 @@ export class OpenApiAdapter implements Adapter {
 
         const params = deref([...(item.parameters ?? []), ...(op.parameters ?? [])], spec);
         for (const p of params) {
+          if (p.in === "body" && p.schema) {
+            // Swagger 2.0 body parameter
+            op.requestBody ??= { required: p.required, content: { "application/json": { schema: p.schema } } };
+            continue;
+          }
           if (!["query", "path", "header"].includes(p.in)) continue;
-          properties[p.name] = { ...(p.schema ?? { type: "string" }), description: p.description };
+          properties[p.name] = { ...(p.schema ?? { type: p.type ?? "string" }), description: p.description };
           locations[p.name] = p.in;
           if (p.required || p.in === "path") required.push(p.name);
         }
@@ -103,6 +111,7 @@ export class OpenApiAdapter implements Adapter {
           locations,
           headers: this.manifest.headers,
           auth: this.manifest.auth,
+          tls: this.manifest.tls,
         });
       }
     }

@@ -3,22 +3,38 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Bring Your Own Integration – universalport → MCP/LLM/Skills/Auth → chatt",
+  "description": "Bring Your Own Integration \u2013 universalport \u2192 MCP/LLM/Skills/Auth \u2192 chatt",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test test/*.test.ts"
+    "test": "tsx --test --test-timeout=60000 test/*.test.ts",
+    "connector": "tsx src/connector/index.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.1.0",
+    "@grpc/grpc-js": "^1.14.6",
+    "@grpc/proto-loader": "^0.8.1",
     "@modelcontextprotocol/sdk": "^1.32.1",
     "ajv": "^8.20.0",
+    "aws4": "^1.13.2",
+    "graphql": "^16.14.2",
+    "mqtt": "^5.16.1",
+    "mysql2": "^3.24.6",
+    "pg": "^8.23.1",
+    "playwright-core": "1.56.1",
+    "soap": "^1.14.0",
+    "undici": "^8.12.3",
+    "ws": "^8.22.0",
     "yaml": "^2.9.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/aws4": "^1.11.6",
     "@types/node": "^22.20.5",
+    "@types/pg": "^8.23.1",
+    "@types/ws": "^8.18.2",
+    "aedes": "^1.2.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }

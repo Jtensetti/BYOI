@@ -112,7 +112,8 @@ test("core: agent runs tools, waits for approval and returns results to Claude",
   assert.equal(toolResult.tool_use_id, "tu_1");
   assert.match(toolResult.content, /"title": "Test"/);
   assert.ok(second.tools.some((t: any) => t.name === "notes__create" && t.eager_input_streaming));
-  assert.match(second.system, /notes: Anteckningar/);
+  assert.match(second.system, /notes \(module\): Anteckningar/);
+  assert.equal(second.tools[0].name, "tool_search_tool_bm25");
   assert.equal(app.agent.history("c1").length, 4);
 });
 

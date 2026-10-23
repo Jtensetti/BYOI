@@ -1,0 +1,7 @@
+id: gh-hooks
+name: GitHub-händelser
+kind: webhook          # webhook-URL: <BYOI>/hooks/gh-hooks
+verify: { type: hmac, secret: GITHUB_WEBHOOK_SECRET, header: X-Hub-Signature-256, prefix: "sha256=" }
+trigger:
+  prompt: Ett GitHub-event kom in. Om det är en ny issue, föreslå etiketter och sammanfatta den.
+  autoApprove: []      # skrivande verktyg nekas i automatiska körningar om de inte listas här

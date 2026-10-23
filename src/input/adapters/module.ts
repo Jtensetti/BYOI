@@ -2,7 +2,7 @@
 // lines of TypeScript (SDKs, databases, queues, legacy systems) plugs in here.
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { Manifest } from "../manifest.ts";
+import type { ManifestOf } from "../manifest.ts";
 import type { Adapter, AdapterContext, JsonSchema, ToolDef, ToolOutput } from "./types.ts";
 
 export interface ModuleTool {
@@ -31,7 +31,7 @@ export class ModuleAdapter implements Adapter {
   private mod!: IntegrationModule;
 
   constructor(
-    private manifest: Extract<Manifest, { kind: "module" }>,
+    private manifest: ManifestOf<"module">,
     private ctx: AdapterContext,
   ) {}
 
@@ -59,6 +59,10 @@ export class ModuleAdapter implements Adapter {
       config: this.manifest.config,
       secret: (n) => this.ctx.secrets.get(n),
     });
+    // A module may return a full ToolOutput ({ text, isError?, images? } and nothing else).
+    const isToolOutput = (r: unknown): r is ToolOutput =>
+      !!r && typeof r === "object" && typeof (r as ToolOutput).text === "string" && Object.keys(r).every((k) => ["text", "isError", "images"].includes(k));
+    if (isToolOutput(result)) return result;
     return { text: typeof result === "string" ? result : JSON.stringify(result, null, 1) };
   }
 

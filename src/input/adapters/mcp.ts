@@ -3,7 +3,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import type { Manifest } from "../manifest.ts";
+import type { ManifestOf } from "../manifest.ts";
 import type { Adapter, AdapterContext, JsonSchema, ToolDef, ToolOutput } from "./types.ts";
 
 export class McpAdapter implements Adapter {
@@ -11,7 +11,7 @@ export class McpAdapter implements Adapter {
   private tools: ToolDef[] = [];
 
   constructor(
-    private manifest: Extract<Manifest, { kind: "mcp" }>,
+    private manifest: ManifestOf<"mcp">,
     private ctx: AdapterContext,
   ) {}
 
@@ -28,6 +28,13 @@ export class McpAdapter implements Adapter {
           })
         : new StreamableHTTPClientTransport(new URL(t.url), {
             requestInit: { headers: t.headers },
+            // Attach the manifest's auth (OAuth, API key, …) to every request.
+            fetch: async (url, init) => {
+              const headers = new Headers(init?.headers);
+              const body = typeof init?.body === "string" ? init.body : undefined;
+              await this.ctx.auth.apply(this.manifest.auth, { method: init?.method ?? "GET", url: new URL(url), headers, body }, this.ctx.integrationId);
+              return fetch(url, { ...init, headers });
+            },
           });
     await this.client.connect(transport);
 
@@ -49,6 +56,9 @@ export class McpAdapter implements Adapter {
   async callTool(name: string, input: Record<string, unknown>): Promise<ToolOutput> {
     const result = await this.client.callTool({ name, arguments: input });
     const parts = Array.isArray(result.content) ? result.content : [];
+    const images = parts
+      .filter((p: any) => p.type === "image" && /^image\/(png|jpeg)$/.test(p.mimeType))
+      .map((p: any) => ({ mediaType: p.mimeType as "image/png" | "image/jpeg", data: p.data as string }));
     const text = parts
       .map((p: any) =>
         p.type === "text" ? p.text : p.type === "resource" ? (p.resource?.text ?? "") : `[${p.type}]`,
@@ -57,6 +67,7 @@ export class McpAdapter implements Adapter {
     return {
       text: text || JSON.stringify(result.structuredContent ?? result),
       isError: Boolean(result.isError),
+      ...(images.length ? { images } : {}),
     };
   }
 

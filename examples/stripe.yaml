@@ -1,0 +1,8 @@
+id: stripe
+name: Stripe
+kind: openapi
+spec: https://raw.githubusercontent.com/stripe/openapi/master/openapi/spec3.json
+baseUrl: https://api.stripe.com
+auth: { type: bearer, secret: STRIPE_SECRET_KEY }
+# Hundratals operationer: modellen hittar rätt via verktygssökning.
+# Begränsa gärna: include: [GetCustomers, GetCharges, GetInvoices]
