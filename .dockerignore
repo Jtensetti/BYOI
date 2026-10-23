@@ -1,6 +1,0 @@
-node_modules
-.git
-.secrets.json
-.notes.json
-test/.tmp-*
-*.log

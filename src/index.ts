@@ -15,10 +15,7 @@ server.listen(port, () => {
   if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) {
     console.log("  OBS: ANTHROPIC_API_KEY saknas – chatten fungerar inte förrän den är satt (MCP-gatewayen fungerar ändå).");
   }
-  if (!process.env.BYOI_API_TOKEN) {
-    console.log("  OBS: BYOI_API_TOKEN är inte satt – API:t är öppet (bara för lokal utveckling).");
-    if (process.env.NODE_ENV === "production") console.log("  VARNING: produktionsläge utan BYOI_API_TOKEN – vem som helst kan använda din Claude-nyckel.");
-  }
+  if (!process.env.BYOI_API_TOKEN) console.log("  OBS: BYOI_API_TOKEN är inte satt – API:t är öppet (bara för lokal utveckling).");
 });
 
 const shutdown = async () => {

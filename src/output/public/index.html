@@ -80,23 +80,12 @@
 <script>
 const $ = (s) => document.querySelector(s);
 let token = ""; try { token = localStorage.getItem("byoi_token") || ""; } catch {}
-// A shared link can carry the password: https://…/?token=XYZ (stored, then removed from the address bar).
-{
-  const fromLink = new URLSearchParams(location.search).get("token");
-  if (fromLink) {
-    token = fromLink;
-    try { localStorage.setItem("byoi_token", token); } catch {}
-    const u = new URL(location.href); u.searchParams.delete("token"); history.replaceState(null, "", u);
-  }
-}
 let conversationId = null;
 
 async function api(path, opts = {}) {
   const res = await fetch(path, { ...opts, headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}), ...(opts.headers || {}) } });
   if (res.status === 401) {
-    const entered = prompt("Lösenord för BYOI:");
-    if (entered === null) throw new Error("Ingen åtkomst");
-    token = entered.trim();
+    token = prompt("API-token (BYOI_API_TOKEN):") || "";
     try { localStorage.setItem("byoi_token", token); } catch {}
     return api(path, opts);
   }

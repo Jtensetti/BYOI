@@ -47,8 +47,7 @@ function json(res: ServerResponse, status: number, data: unknown): void {
 }
 
 function publicUrl(req: IncomingMessage): string {
-  const configured = process.env.BYOI_PUBLIC_URL ?? process.env.RENDER_EXTERNAL_URL;
-  if (configured) return configured.replace(/\/$/, "");
+  if (process.env.BYOI_PUBLIC_URL) return process.env.BYOI_PUBLIC_URL.replace(/\/$/, "");
   const proto = (req.headers["x-forwarded-proto"] as string) ?? "http";
   return `${proto}://${req.headers.host ?? "localhost"}`;
 }
