@@ -38,6 +38,21 @@ kommunicerar på, och BYOI täcker alla:
 6. **Skalar till stora API:er.** Över 30 verktyg laddas integrationernas verktyg först när de behövs, via
    Claudes verktygssökning. Ett API med 500 operationer fungerar därför lika bra som ett med 5.
 
+## Publicera live (Render, gratisnivå)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Jtensetti/BYOI)
+
+1. Tryck på knappen och logga in på Render med GitHub.
+2. Fyll i `ANTHROPIC_API_KEY` när du blir tillfrågad och tryck **Deploy**. Bygget tar några minuter.
+3. Hämta lösenordet: tjänsten **byoi** → **Environment** → `BYOI_API_TOKEN`.
+4. Dela länken med lösenordet inbakat: `https://<din-tjänst>.onrender.com/?token=<BYOI_API_TOKEN>`.
+   Den som öppnar länken kommer direkt in. Utan lösenordet fungerar varken chatten, API:t eller `/mcp`.
+
+Bra att veta om gratisnivån: tjänsten somnar efter en stunds inaktivitet (första besöket tar då cirka en minut),
+och integrationer eller hemligheter som läggs till via gränssnittet försvinner vid omstart. Det som ligger i
+`integrations/` i repot finns alltid kvar. Alla med länken använder din Claude-nyckel, så dela den bara med
+dem du vill ska kunna använda den. Byt `BYOI_API_TOKEN` i Render för att stänga gamla länkar.
+
 ## Kom igång
 
 ```bash
